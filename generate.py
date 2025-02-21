@@ -61,7 +61,7 @@ TARGET_DIR =    base_dir + '/crypto_sign'          # output
 UNZIP_DIR =     base_dir + '/unzip'                # unzipped files (temporary)
 IMPL_DIR =      base_dir + '/impl'                 # CROSS implementation (temporary)
 
-PROBLEMS = {"RSDP", "RSDPG"}
+PROBLEMS = ["RSDP", "RSDPG"]
 
 CATEGORIES = {128: 1,
               192: 3,
@@ -71,11 +71,11 @@ TARGETS = {"balanced": "BALANCED",
            "fast": "SPEED",
            "small": "SIG_SIZE"}
 
-IMPLEMENTATIONS = {"clean", "avx2"}
+IMPLEMENTATIONS = ["clean", "avx2"]
 
-INCLUDE = {"set.h",                                 # specifies the parameter set
+INCLUDE = ["set.h",                                 # specifies the parameter set
            "namespace.h",                           # namespaces functions
-           "crypto_sign.h"}                         # SUPERCOP API
+           "crypto_sign.h"]                         # SUPERCOP API
 
 ###############################################################################
 #################################### main #####################################
@@ -101,7 +101,7 @@ for source_dir in ["lib", "include"]:
 for source_dir in ["lib", "include"]:
     source_dir = os.path.join(UNZIP_DIR, "Optimized_Implementation", source_dir)
     shutil.copytree(source_dir, IMPL_DIR + '/avx2', dirs_exist_ok=True)
-symlink_dir = ''
+symlink_variant = ''
 
 # include new files afer the header comment
 keyword = "*/"
@@ -109,12 +109,12 @@ for file in INCLUDE:
     add_line_in_dir(IMPL_DIR, f"#include \"{file}\"", keyword)
 
 # generate all parameter sets
-combinations = itertools.product(PROBLEMS, CATEGORIES, TARGETS, IMPLEMENTATIONS)
+combinations = itertools.product(PROBLEMS, sorted(CATEGORIES), sorted(TARGETS), IMPLEMENTATIONS)
 for ps, (p,c,t,i) in enumerate(combinations):
     print('.', end='', flush=True)
     # create the directory
-    ps_dir = generate_dir_name(p,c,t,i)
-    ps_dir = os.path.join(TARGET_DIR, ps_dir)
+    ps_name = generate_dir_name(p,c,t,i)
+    ps_dir = os.path.join(TARGET_DIR, ps_name)
     os.makedirs(ps_dir)
     # copy the template files
     shutil.copytree(TEMPLATES_DIR, ps_dir, dirs_exist_ok=True)
@@ -129,18 +129,21 @@ for ps, (p,c,t,i) in enumerate(combinations):
     if ps <= 1:
         copy_from = os.path.join(IMPL_DIR, i)
         shutil.copytree(copy_from, ps_dir, dirs_exist_ok=True)
-        symlink_dir = os.path.dirname(ps_dir)
+        symlink_variant = os.path.dirname(ps_name)
     # for the rest create symlinks
     else:
-        copy_from = os.path.join(symlink_dir, i)
+        copy_from = os.path.join(TARGET_DIR, symlink_variant, i)
         for file in os.listdir(copy_from):
             if file not in INCLUDE:
-                source_file = os.path.join(copy_from, file)
-                target_file = os.path.join(ps_dir, file)
-                os.symlink(source_file, target_file)
+                origin = os.path.join('../..', symlink_variant, i, file)
+                destination = os.path.join(ps_dir, file)
+                os.symlink(origin, destination)
 
 shutil.rmtree(UNZIP_DIR)
 shutil.rmtree(IMPL_DIR)
 
 current_time = datetime.datetime.now().strftime("%H:%M")
-print("\nImplementations placed in", TARGET_DIR, "@", current_time)
+print("\nImplementations placed in:")
+print(TARGET_DIR)
+print("Symbolic links point to:", symlink_variant)
+print("@", current_time)
