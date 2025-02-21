@@ -1,3 +1,6 @@
+# take as input a zip file containg the NIST submission package for CROSS
+# and generate the required directory structure for SUPERCOP
+
 import datetime
 import fileinput
 import itertools
@@ -25,7 +28,7 @@ def replace_in_dir(dir, text_to_search, replacement_text):
 def add_line_in_file(path, new_line, keyword):
     with open(path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
-    # insert the new line after the keyword
+    # find the keyword and insert the new line after it
     for i, line in enumerate(lines):
         if keyword in line:
             lines.insert(i + 1, new_line + '\n')
@@ -50,9 +53,13 @@ def generate_dir_name(variant, category, target, implementation):
 #################################### data #####################################
 ###############################################################################
 
-TARGET_DIR = './crypto_sign'            # output
-UNZIP_DIR = './unzip'                   # unzipped files (temporary)
-TEMPLATES_DIR = './templates'           # files to add
+# the directory where the script is located
+base_dir = os.path.dirname(os.path.realpath(__file__))
+
+TEMPLATES_DIR = base_dir + '/templates'            # files to add
+TARGET_DIR =    base_dir + '/crypto_sign'          # output
+UNZIP_DIR =     base_dir + '/unzip'                # unzipped files (temporary)
+IMPL_DIR =      base_dir + '/impl'                 # CROSS implementation (temporary)
 
 PROBLEMS = {"RSDP", "RSDPG"}
 
@@ -60,51 +67,56 @@ CATEGORIES = {128: 1,
               192: 3,
               256: 5}
 
-TARGETS = {"small": "SIG_SIZE",
-           "balanced": "BALANCED",
-           "fast": "SPEED"}
+TARGETS = {"balanced": "BALANCED",
+           "fast": "SPEED",
+           "small": "SIG_SIZE"}
 
 IMPLEMENTATIONS = {"clean", "avx2"}
+
+INCLUDE = {"set.h",                                 # specifies the parameter set
+           "namespace.h",                           # namespaces functions
+           "crypto_sign.h"}                         # SUPERCOP API
 
 ###############################################################################
 #################################### main #####################################
 ###############################################################################
-
-# move to the directory where the script is located
-base_dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(base_dir)
 
 # delete output directories if they already exists
 if os.path.exists(TARGET_DIR):
     shutil.rmtree(TARGET_DIR)
 if os.path.exists(UNZIP_DIR):
     shutil.rmtree(UNZIP_DIR)
+if os.path.exists(IMPL_DIR):
+    shutil.rmtree(IMPL_DIR)
 
 # unzip the CROSS submission package, provided as input
 nist_zip = sys.argv[1]
 shutil.unpack_archive(nist_zip, UNZIP_DIR)
 
+# copy the 'clean' and 'avx2' implementations into temporary directories
+for source_dir in ["lib", "include"]:
+    source_dir = os.path.join(UNZIP_DIR, "Reference_Implementation", source_dir)
+    shutil.copytree(source_dir, IMPL_DIR + '/clean', dirs_exist_ok=True)
+    shutil.copytree(source_dir, IMPL_DIR + '/avx2', dirs_exist_ok=True)
+for source_dir in ["lib", "include"]:
+    source_dir = os.path.join(UNZIP_DIR, "Optimized_Implementation", source_dir)
+    shutil.copytree(source_dir, IMPL_DIR + '/avx2', dirs_exist_ok=True)
+symlink_dir = ''
+
+# include new files afer the header comment
+keyword = "*/"
+for file in INCLUDE:
+    add_line_in_dir(IMPL_DIR, f"#include \"{file}\"", keyword)
+
 # generate all parameter sets
 combinations = itertools.product(PROBLEMS, CATEGORIES, TARGETS, IMPLEMENTATIONS)
-for p,c,t,i in combinations:
+for ps, (p,c,t,i) in enumerate(combinations):
     print('.', end='', flush=True)
     # create the directory
     ps_dir = generate_dir_name(p,c,t,i)
     ps_dir = os.path.join(TARGET_DIR, ps_dir)
     os.makedirs(ps_dir)
-    # copy the implementation
-    for impl_dir in ["lib", "include"]:
-        source_dir = os.path.join(UNZIP_DIR, "Reference_Implementation", impl_dir)
-        shutil.copytree(source_dir, ps_dir, dirs_exist_ok=True)
-    if(i == "avx2"):
-        for impl_dir in ["lib", "include"]:
-            source_dir = os.path.join(UNZIP_DIR, "Optimized_Implementation", impl_dir)
-            shutil.copytree(source_dir, ps_dir, dirs_exist_ok=True)
-    # copy the template files and #include them after the header comment
-    keyword = "*/"
-    add_line_in_dir(ps_dir, '#include "set.h"', keyword)
-    add_line_in_dir(ps_dir, '#include "namespace.h"', keyword)
-    add_line_in_dir(ps_dir, '#include "crypto_sign.h"', keyword)
+    # copy the template files
     shutil.copytree(TEMPLATES_DIR, ps_dir, dirs_exist_ok=True)
     # replace the placeholders with the actual parameters
     ps_namespace = generate_namespace(p,c,t,i)
@@ -113,6 +125,22 @@ for p,c,t,i in combinations:
     replace_in_dir(ps_dir, '__implementation__', i)
     replace_in_dir(ps_dir, '__nist-level__', str(CATEGORIES[c]) )
     replace_in_dir(ps_dir, '__target__', TARGETS[t])
+    # for the first parameter set hard copy the implementation files
+    if ps <= 1:
+        copy_from = os.path.join(IMPL_DIR, i)
+        shutil.copytree(copy_from, ps_dir, dirs_exist_ok=True)
+        symlink_dir = os.path.dirname(ps_dir)
+    # for the rest create symlinks
+    else:
+        copy_from = os.path.join(symlink_dir, i)
+        for file in os.listdir(copy_from):
+            if file not in INCLUDE:
+                source_file = os.path.join(copy_from, file)
+                target_file = os.path.join(ps_dir, file)
+                os.symlink(source_file, target_file)
+
+shutil.rmtree(UNZIP_DIR)
+shutil.rmtree(IMPL_DIR)
 
 current_time = datetime.datetime.now().strftime("%H:%M")
 print("\nImplementations placed in", TARGET_DIR, "@", current_time)
