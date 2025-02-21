@@ -110,7 +110,7 @@ for file in INCLUDE:
 
 # generate all parameter sets
 combinations = itertools.product(PROBLEMS, sorted(CATEGORIES), sorted(TARGETS), IMPLEMENTATIONS)
-for ps, (p,c,t,i) in enumerate(combinations):
+for index, (p,c,t,i) in enumerate(combinations):
     print('.', end='', flush=True)
     # create the directory
     ps_name = generate_dir_name(p,c,t,i)
@@ -126,7 +126,7 @@ for ps, (p,c,t,i) in enumerate(combinations):
     replace_in_dir(ps_dir, '__nist-level__', str(CATEGORIES[c]) )
     replace_in_dir(ps_dir, '__target__', TARGETS[t])
     # for the first parameter set hard copy the implementation files
-    if ps <= 1:
+    if index <= 1:
         copy_from = os.path.join(IMPL_DIR, i)
         shutil.copytree(copy_from, ps_dir, dirs_exist_ok=True)
         symlink_variant = os.path.dirname(ps_name)
