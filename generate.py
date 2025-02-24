@@ -7,6 +7,7 @@ import itertools
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 ###############################################################################
@@ -57,6 +58,7 @@ def generate_dir_name(variant, category, target, implementation):
 base_dir = os.path.dirname(os.path.realpath(__file__))
 
 TEMPLATES_DIR = base_dir + '/templates'            # files to add
+PATCH_FILE =    base_dir + '/changes.patch'        # patches for CROSS in supercop
 TARGET_DIR =    base_dir + '/crypto_sign'          # output
 UNZIP_DIR =     base_dir + '/unzip'                # unzipped files (temporary)
 IMPL_DIR =      base_dir + '/impl'                 # CROSS implementation (temporary)
@@ -92,6 +94,13 @@ if os.path.exists(IMPL_DIR):
 # unzip the CROSS submission package, provided as input
 nist_zip = sys.argv[1]
 shutil.unpack_archive(nist_zip, UNZIP_DIR)
+
+# patch CROSS before importing into SUPERCOP:
+# - in csprng_hash.h remove randombytes()
+# - in CROSS.c include randombytes.h
+# - in sign.c make a static copy of the public key
+command = f"patch -p1 -d {UNZIP_DIR} < {PATCH_FILE}"
+subprocess.run(command, shell=True)
 
 # copy the 'clean' and 'avx2' implementations into temporary directories
 for source_dir in ["lib", "include"]:
