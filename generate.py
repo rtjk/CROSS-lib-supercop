@@ -132,11 +132,14 @@ for index, (p,c,t,i) in enumerate(combinations):
     shutil.copytree(META_DIR, ps_dir + '/..', dirs_exist_ok=True)
     # replace the placeholders with the actual parameters
     ps_namespace = generate_namespace(p,c,t,i)
-    replace_in_dir(ps_dir + '/..', '__namespace__', ps_namespace)
-    replace_in_dir(ps_dir + '/..', '__problem__', p)
-    replace_in_dir(ps_dir + '/..', '__implementation__', i)
-    replace_in_dir(ps_dir + '/..', '__nist-level__', str(CATEGORIES[c]) )
-    replace_in_dir(ps_dir + '/..', '__target__', TARGETS[t])
+    replace_in_dir(ps_dir, '__namespace__', ps_namespace)
+    replace_in_dir(ps_dir, '__problem__', p)
+    replace_in_dir(ps_dir, '__implementation__', i)
+    replace_in_dir(ps_dir, '__nist-level__', str(CATEGORIES[c]) )
+    replace_in_dir(ps_dir, '__target__', TARGETS[t])
+    replace_in_file(ps_dir + '/../description', '__problem__', p)
+    replace_in_file(ps_dir + '/../description', '__nist-level__', str(CATEGORIES[c]))
+    replace_in_file(ps_dir + '/../description', '__target__', t)
     # for the first parameter set hard copy the implementation files
     if index <= 1:
         copy_from = os.path.join(IMPL_DIR, i)
@@ -144,12 +147,11 @@ for index, (p,c,t,i) in enumerate(combinations):
         symlink_variant = os.path.dirname(ps_name)
     # for the rest create symlinks
     else:
-        copy_from = os.path.join(TARGET_DIR, symlink_variant, i)
+        copy_from = os.path.join(IMPL_DIR, i)
         for file in os.listdir(copy_from):
-            if file not in INCLUDE:
-                origin = os.path.join('../..', symlink_variant, i, file)
-                destination = os.path.join(ps_dir, file)
-                os.symlink(origin, destination)
+            origin = os.path.join('../..', symlink_variant, i, file)
+            destination = os.path.join(ps_dir, file)
+            os.symlink(origin, destination)
 
 shutil.rmtree(UNZIP_DIR)
 shutil.rmtree(IMPL_DIR)
