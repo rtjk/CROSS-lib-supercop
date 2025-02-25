@@ -62,6 +62,7 @@ PATCH_FILE =    base_dir + '/changes.patch'        # patches for CROSS in superc
 TARGET_DIR =    base_dir + '/crypto_sign'          # output
 UNZIP_DIR =     base_dir + '/unzip'                # unzipped files (temporary)
 IMPL_DIR =      base_dir + '/impl'                 # CROSS implementation (temporary)
+META_DIR =      base_dir + '/metadata'             # meta information
 
 PROBLEMS = ["RSDP", "RSDPG"]
 
@@ -127,13 +128,15 @@ for index, (p,c,t,i) in enumerate(combinations):
     os.makedirs(ps_dir)
     # copy the template files
     shutil.copytree(TEMPLATES_DIR, ps_dir, dirs_exist_ok=True)
+    # copy the metadata
+    shutil.copytree(META_DIR, ps_dir + '/..', dirs_exist_ok=True)
     # replace the placeholders with the actual parameters
     ps_namespace = generate_namespace(p,c,t,i)
-    replace_in_dir(ps_dir, '__namespace__', ps_namespace)
-    replace_in_dir(ps_dir, '__problem__', p)
-    replace_in_dir(ps_dir, '__implementation__', i)
-    replace_in_dir(ps_dir, '__nist-level__', str(CATEGORIES[c]) )
-    replace_in_dir(ps_dir, '__target__', TARGETS[t])
+    replace_in_dir(ps_dir + '/..', '__namespace__', ps_namespace)
+    replace_in_dir(ps_dir + '/..', '__problem__', p)
+    replace_in_dir(ps_dir + '/..', '__implementation__', i)
+    replace_in_dir(ps_dir + '/..', '__nist-level__', str(CATEGORIES[c]) )
+    replace_in_dir(ps_dir + '/..', '__target__', TARGETS[t])
     # for the first parameter set hard copy the implementation files
     if index <= 1:
         copy_from = os.path.join(IMPL_DIR, i)
