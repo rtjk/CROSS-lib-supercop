@@ -74,7 +74,7 @@ TARGETS = {"balanced": "BALANCED",
            "fast": "SPEED",
            "small": "SIG_SIZE"}
 
-IMPLEMENTATIONS = ["clean", "avx2"]
+IMPLEMENTATIONS = ["ref", "opt"]
 
 INCLUDE = ["set.h",                                 # specifies the parameter set
            "namespace.h",                           # namespaces functions
@@ -103,14 +103,14 @@ shutil.unpack_archive(nist_zip, UNZIP_DIR)
 command = f"patch -p1 -d {UNZIP_DIR} < {PATCH_FILE}"
 subprocess.run(command, shell=True)
 
-# copy the 'clean' and 'avx2' implementations into temporary directories
+# copy the 'ref' and 'opt' implementations into temporary directories
 for source_dir in ["lib", "include"]:
     source_dir = os.path.join(UNZIP_DIR, "Reference_Implementation", source_dir)
-    shutil.copytree(source_dir, IMPL_DIR + '/clean', dirs_exist_ok=True)
-    shutil.copytree(source_dir, IMPL_DIR + '/avx2', dirs_exist_ok=True)
+    shutil.copytree(source_dir, IMPL_DIR + '/ref', dirs_exist_ok=True)
+    shutil.copytree(source_dir, IMPL_DIR + '/opt', dirs_exist_ok=True)
 for source_dir in ["lib", "include"]:
     source_dir = os.path.join(UNZIP_DIR, "Optimized_Implementation", source_dir)
-    shutil.copytree(source_dir, IMPL_DIR + '/avx2', dirs_exist_ok=True)
+    shutil.copytree(source_dir, IMPL_DIR + '/opt', dirs_exist_ok=True)
 symlink_variant = ''
 
 # include new files afer the header comment
