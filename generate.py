@@ -57,7 +57,8 @@ def generate_dir_name(variant, category, target, implementation):
 # the directory where the script is located
 base_dir = os.path.dirname(os.path.realpath(__file__))
 
-TEMPLATES_DIR = base_dir + '/templates'            # files to add
+HEADERS_DIR =   base_dir + '/headers'              # header files to add
+TIMECOP_DIR =   base_dir + '/timecop'              # TIMECOP files to add
 PATCH_FILE =    base_dir + '/changes.patch'        # patches for CROSS in supercop
 TARGET_DIR =    base_dir + '/crypto_sign'          # output
 UNZIP_DIR =     base_dir + '/unzip'                # unzipped files (temporary)
@@ -100,6 +101,9 @@ shutil.unpack_archive(nist_zip, UNZIP_DIR)
 # - in csprng_hash.h remove randombytes()
 # - in CROSS.c include randombytes.h
 # - in sign.c make a static copy of the public key
+# - tell TIMECOP to ignore non-constant-time behavior in rejection sampling, using crypto_declassify()
+# the patch file was created with:
+#   diff -ruaN unzip tmp > changes.patch
 command = f"patch -p1 -d {UNZIP_DIR} < {PATCH_FILE}"
 subprocess.run(command, shell=True)
 
@@ -127,7 +131,7 @@ for index, (p,c,t,i) in enumerate(combinations):
     ps_dir = os.path.join(TARGET_DIR, ps_name)
     os.makedirs(ps_dir)
     # copy the template files
-    shutil.copytree(TEMPLATES_DIR, ps_dir, dirs_exist_ok=True)
+    shutil.copytree(HEADERS_DIR, ps_dir, dirs_exist_ok=True)
     # copy the metadata
     shutil.copytree(META_DIR, ps_dir + '/..', dirs_exist_ok=True)
     # replace the placeholders with the actual parameters
@@ -144,11 +148,12 @@ for index, (p,c,t,i) in enumerate(combinations):
     if index <= 1:
         copy_from = os.path.join(IMPL_DIR, i)
         shutil.copytree(copy_from, ps_dir, dirs_exist_ok=True)
+        shutil.copytree(TIMECOP_DIR, ps_dir, dirs_exist_ok=True)
         symlink_variant = os.path.dirname(ps_name)
     # for the rest create symlinks
     else:
         copy_from = os.path.join(IMPL_DIR, i)
-        for file in os.listdir(copy_from):
+        for file in (os.listdir(copy_from) + os.listdir(TIMECOP_DIR)):
             origin = os.path.join('../..', symlink_variant, i, file)
             destination = os.path.join(ps_dir, file)
             os.symlink(origin, destination)

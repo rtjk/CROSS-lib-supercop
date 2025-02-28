@@ -1,7 +1,15 @@
 diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Implementation/include/csprng_hash.h
---- unzip/Optimized_Implementation/include/csprng_hash.h	2025-02-24 14:21:56.908278804 +0100
-+++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-02-24 14:08:55.388808964 +0100
-@@ -180,17 +180,6 @@
+--- unzip/Optimized_Implementation/include/csprng_hash.h	2025-02-28 17:58:07.512544419 +0100
++++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-02-28 17:57:54.144376254 +0100
+@@ -34,6 +34,7 @@
+ #ifndef CSPRNG_HASH_H
+ #define CSPRNG_HASH_H
+ 
++#include "crypto_declassify.h"
+ #include "parameters.h"
+ #include "sha3.h"
+ 
+@@ -180,17 +181,6 @@
     else if(par_level == 4) csprng_randombytes_x4(x1, x2, x3, x4, xlen, &(states->state4));
  }
  
@@ -19,9 +27,77 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
  /************************* HASH functions ********************************/
  
  /* Opaque algorithm agnostic hash call */
+@@ -277,6 +267,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FP_ELEM));
++
+         if (res[placed] < P) {
+            placed++;
+         }
+@@ -322,6 +316,10 @@
+         }
+         /* draw from 0 ... P-2, then add 1*/
+         res[placed] = (sub_buffer & mask)+1;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FP_ELEM));
++
+         if (res[placed] < P) {
+            placed++;
+         }
+@@ -364,6 +362,11 @@
+             pos_remaining -= refresh_amount;
+         }
+         *((FP_ELEM*)res+placed) = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        FP_ELEM *target = ((FP_ELEM*)res + placed);
++        crypto_declassify(target, sizeof(FP_ELEM));
++
+         if (*((FP_ELEM*)res+placed) < P) {
+            placed++;
+         }
+@@ -407,6 +410,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FZ_ELEM));
++
+         if (res[placed] < Z) {
+            placed++;
+         }
+@@ -449,6 +456,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FZ_ELEM));
++
+         if (res[placed] < Z) {
+            placed++;
+         }
+@@ -492,6 +503,11 @@
+             pos_remaining -= refresh_amount;
+         }
+         *((FZ_ELEM*)res+placed) = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        FZ_ELEM *target = ((FZ_ELEM*)res + placed);
++        crypto_declassify(target, sizeof(FZ_ELEM));
++
+         if (*((FZ_ELEM*)res+placed) < Z) {
+            placed++;
+         }
 diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementation/lib/CROSS.c
---- unzip/Optimized_Implementation/lib/CROSS.c	2025-02-24 14:21:56.908278804 +0100
-+++ tmp/Optimized_Implementation/lib/CROSS.c	2025-02-24 14:10:32.585252338 +0100
+--- unzip/Optimized_Implementation/lib/CROSS.c	2025-02-28 17:58:07.516544468 +0100
++++ tmp/Optimized_Implementation/lib/CROSS.c	2025-02-28 17:05:33.281524122 +0100
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -31,9 +107,17 @@ diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Implementation/include/csprng_hash.h
---- unzip/Reference_Implementation/include/csprng_hash.h	2025-02-24 14:21:56.908278804 +0100
-+++ tmp/Reference_Implementation/include/csprng_hash.h	2025-02-24 14:09:04.804464249 +0100
-@@ -64,17 +64,6 @@
+--- unzip/Reference_Implementation/include/csprng_hash.h	2025-02-28 17:58:07.516544468 +0100
++++ tmp/Reference_Implementation/include/csprng_hash.h	2025-02-28 17:24:20.091597980 +0100
+@@ -34,6 +34,7 @@
+ #ifndef CSPRNG_HASH_H
+ #define CSPRNG_HASH_H
+ 
++#include "crypto_declassify.h"
+ #include "parameters.h"
+ #include "sha3.h"
+ 
+@@ -64,17 +65,6 @@
     xof_shake_extract(csprng_state,x,xlen);
  }
  
@@ -51,9 +135,77 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
  /************************* HASH functions ********************************/
  
  /* Opaque algorithm agnostic hash call */
+@@ -138,6 +128,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FP_ELEM));
++
+         if (res[placed] < P) {
+            placed++;
+         }
+@@ -183,6 +177,10 @@
+         }
+         /* draw from 0 ... P-2, then add 1*/
+         res[placed] = (sub_buffer & mask)+1;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FP_ELEM));
++
+         if (res[placed] < P) {
+            placed++;
+         }
+@@ -225,6 +223,11 @@
+             pos_remaining -= refresh_amount;
+         }
+         *((FP_ELEM*)res+placed) = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        FP_ELEM *target = ((FP_ELEM*)res + placed);
++        crypto_declassify(target, sizeof(FP_ELEM));
++
+         if (*((FP_ELEM*)res+placed) < P) {
+            placed++;
+         }
+@@ -268,6 +271,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FZ_ELEM));
++
+         if (res[placed] < Z) {
+            placed++;
+         }
+@@ -310,6 +317,10 @@
+             pos_remaining -= refresh_amount;
+         }
+         res[placed] = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&res[placed], sizeof(FZ_ELEM));
++
+         if (res[placed] < Z) {
+            placed++;
+         }
+@@ -353,6 +364,11 @@
+             pos_remaining -= refresh_amount;
+         }
+         *((FZ_ELEM*)res+placed) = sub_buffer & mask;
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        FZ_ELEM *target = ((FZ_ELEM*)res + placed);
++        crypto_declassify(target, sizeof(FZ_ELEM));
++
+         if (*((FZ_ELEM*)res+placed) < Z) {
+            placed++;
+         }
 diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementation/lib/CROSS.c
---- unzip/Reference_Implementation/lib/CROSS.c	2025-02-24 14:21:56.912278658 +0100
-+++ tmp/Reference_Implementation/lib/CROSS.c	2025-02-24 14:10:40.888948646 +0100
+--- unzip/Reference_Implementation/lib/CROSS.c	2025-02-28 17:58:07.520544520 +0100
++++ tmp/Reference_Implementation/lib/CROSS.c	2025-02-28 17:05:33.281524122 +0100
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -62,9 +214,32 @@ diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementati
  #include "seedtree.h"
  
  #if defined(RSDP)
+diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implementation/lib/csprng_hash.c
+--- unzip/Reference_Implementation/lib/csprng_hash.c	2025-02-28 17:58:07.520544520 +0100
++++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-02-28 17:19:23.499523627 +0100
+@@ -33,8 +33,6 @@
+ 
+ #include "csprng_hash.h"
+ 
+-CSPRNG_STATE_T platform_csprng_state;
+-
+ #define  POSITION_MASK (( (uint16_t)1 << BITS_TO_REPRESENT(T-1))-1)
+ 
+ /* Fisher-Yates shuffle obtaining the entire required randomness in a single 
+@@ -81,6 +79,10 @@
+         int bits_for_pos = BITS_TO_REPRESENT(T-1-curr);
+         uint64_t pos_mask = ( (uint64_t) 1 <<  bits_for_pos) - 1;
+         uint16_t candidate_pos = (sub_buffer & pos_mask);
++
++        /* SUPERCOP edit: tell TIMECOP to ignore non-constant-time behavior in rejection sampling. */
++        crypto_declassify(&candidate_pos, sizeof(uint16_t));
++
+         if (candidate_pos < T-curr) {
+             int dest = curr+candidate_pos;
+             /* the position is admissible, swap */
 diff -ruaN unzip/Reference_Implementation/lib/sign.c tmp/Reference_Implementation/lib/sign.c
---- unzip/Reference_Implementation/lib/sign.c	2025-02-24 14:21:56.908278804 +0100
-+++ tmp/Reference_Implementation/lib/sign.c	2025-02-24 14:10:15.961860376 +0100
+--- unzip/Reference_Implementation/lib/sign.c	2025-02-28 17:58:07.520544520 +0100
++++ tmp/Reference_Implementation/lib/sign.c	2025-02-28 17:05:33.281524122 +0100
 @@ -77,14 +77,18 @@
                       unsigned long long *mlen,                  // out parameter
                       const unsigned char *sm,                   // in parameter
