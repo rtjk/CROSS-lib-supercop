@@ -1,6 +1,6 @@
 diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Implementation/include/csprng_hash.h
---- unzip/Optimized_Implementation/include/csprng_hash.h	2025-02-28 17:58:07.512544419 +0100
-+++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-02-28 17:57:54.144376254 +0100
+--- unzip/Optimized_Implementation/include/csprng_hash.h	2025-03-15 11:38:28.743967889 +0100
++++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-03-15 11:38:05.715569475 +0100
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
  #define CSPRNG_HASH_H
@@ -96,8 +96,8 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
             placed++;
          }
 diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementation/lib/CROSS.c
---- unzip/Optimized_Implementation/lib/CROSS.c	2025-02-28 17:58:07.516544468 +0100
-+++ tmp/Optimized_Implementation/lib/CROSS.c	2025-02-28 17:05:33.281524122 +0100
+--- unzip/Optimized_Implementation/lib/CROSS.c	2025-03-15 11:38:28.743967889 +0100
++++ tmp/Optimized_Implementation/lib/CROSS.c	2025-03-15 11:38:05.719569546 +0100
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -107,8 +107,8 @@ diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Implementation/include/csprng_hash.h
---- unzip/Reference_Implementation/include/csprng_hash.h	2025-02-28 17:58:07.516544468 +0100
-+++ tmp/Reference_Implementation/include/csprng_hash.h	2025-02-28 17:24:20.091597980 +0100
+--- unzip/Reference_Implementation/include/csprng_hash.h	2025-03-15 11:38:28.743967889 +0100
++++ tmp/Reference_Implementation/include/csprng_hash.h	2025-03-15 11:38:05.719569546 +0100
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
  #define CSPRNG_HASH_H
@@ -204,8 +204,8 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
             placed++;
          }
 diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementation/lib/CROSS.c
---- unzip/Reference_Implementation/lib/CROSS.c	2025-02-28 17:58:07.520544520 +0100
-+++ tmp/Reference_Implementation/lib/CROSS.c	2025-02-28 17:05:33.281524122 +0100
+--- unzip/Reference_Implementation/lib/CROSS.c	2025-03-15 11:38:28.747967956 +0100
++++ tmp/Reference_Implementation/lib/CROSS.c	2025-03-15 11:38:05.719569546 +0100
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -215,8 +215,8 @@ diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implementation/lib/csprng_hash.c
---- unzip/Reference_Implementation/lib/csprng_hash.c	2025-02-28 17:58:07.520544520 +0100
-+++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-02-28 17:19:23.499523627 +0100
+--- unzip/Reference_Implementation/lib/csprng_hash.c	2025-03-15 11:38:28.747967956 +0100
++++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-03-15 11:38:05.719569546 +0100
 @@ -33,8 +33,6 @@
  
  #include "csprng_hash.h"
@@ -237,9 +237,80 @@ diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implem
          if (candidate_pos < T-curr) {
              int dest = curr+candidate_pos;
              /* the position is admissible, swap */
+diff -ruaN unzip/Reference_Implementation/lib/pack_unpack.c tmp/Reference_Implementation/lib/pack_unpack.c
+--- unzip/Reference_Implementation/lib/pack_unpack.c	2025-03-15 11:38:28.747967956 +0100
++++ tmp/Reference_Implementation/lib/pack_unpack.c	2025-03-15 11:38:59.120464572 +0100
+@@ -36,6 +36,8 @@
+ 
+ /*Implementation of packing and unpacking of 3/7/9 bit elements into byte vectors*/
+ 
++/* SUPERCOP edit: generic_pack_3_bit is unused in RSDPG */
++#if Z == 7
+ /*
+  * generic_pack_3_bit()
+  *
+@@ -99,6 +101,7 @@
+     out[i*3+2]  = (in[i*8+5] >> 1) | (in[i*8+6] << 2);
+   }
+ }
++#endif
+ 
+ /*
+  * generic_pack_7_bit()
+@@ -182,6 +185,8 @@
+   }
+ }
+ 
++/* SUPERCOP edit: generic_pack_9_bit is unused in RSDP */
++#if P == 509
+ /*
+  * generic_pack_9_bit()
+  *
+@@ -272,6 +277,7 @@
+     out[i*9+7] |= (in[i*8+6] >> 2);
+   }
+ }
++#endif
+ 
+ /*
+  * generic_pack_fp()
+@@ -324,6 +330,8 @@
+ #endif
+ }
+ 
++/* SUPERCOP edit: generic_unpack_3_bit is unused in RSDPG */
++#if Z == 7
+ /*
+  * generic_unpack_3_bit()
+  *
+@@ -413,6 +421,7 @@
+ 
+   return is_packed_padd_ok;
+ }
++#endif
+ 
+ /*
+  * generic_unpack_7_bit()
+@@ -504,6 +513,8 @@
+   return is_packed_padd_ok;
+ }
+ 
++/* SUPERCOP edit: generic_unpack_9_bit is unused in RSDP */
++#if P == 509
+ /*
+  * generic_unpack_9_bit()
+  *
+@@ -593,6 +604,7 @@
+ 
+   return is_packed_padd_ok;
+ }
++#endif
+ 
+ /*
+  * generic_unpack_fp()
 diff -ruaN unzip/Reference_Implementation/lib/sign.c tmp/Reference_Implementation/lib/sign.c
---- unzip/Reference_Implementation/lib/sign.c	2025-02-28 17:58:07.520544520 +0100
-+++ tmp/Reference_Implementation/lib/sign.c	2025-02-28 17:05:33.281524122 +0100
+--- unzip/Reference_Implementation/lib/sign.c	2025-03-15 11:38:28.747967956 +0100
++++ tmp/Reference_Implementation/lib/sign.c	2025-03-15 11:38:05.719569546 +0100
 @@ -77,14 +77,18 @@
                       unsigned long long *mlen,                  // out parameter
                       const unsigned char *sm,                   // in parameter
