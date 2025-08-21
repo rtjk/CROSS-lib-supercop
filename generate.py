@@ -102,10 +102,11 @@ shutil.unpack_archive(nist_zip, UNZIP_DIR)
 # - in CROSS.c include randombytes.h
 # - in pack_unpack.c remove unused functions
 # - in sign.c make a static copy of the public key
+# - move struct definitions to CROSS_struct.h so they can be used in api.h without breaking namespacing
 # - tell TIMECOP to ignore non-constant-time behavior in rejection sampling, using crypto_declassify()
 # the patch file was created with:
 #   diff -ruaN unzip tmp > changes.patch
-command = f"patch -p1 -d {UNZIP_DIR} < {PATCH_FILE}"
+command = f"patch -p1 -d {UNZIP_DIR} --fuzz=3 < {PATCH_FILE}"
 subprocess.run(command, shell=True)
 
 # copy the 'ref' and 'opt' implementations into temporary directories

@@ -1,6 +1,6 @@
 diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Implementation/include/csprng_hash.h
---- unzip/Optimized_Implementation/include/csprng_hash.h	2025-03-15 11:38:28.743967889 +0100
-+++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-03-15 11:38:05.715569475 +0100
+--- unzip/Optimized_Implementation/include/csprng_hash.h	2025-08-22 00:51:23.174058010 +0200
++++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-08-22 00:30:43.455627803 +0200
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
  #define CSPRNG_HASH_H
@@ -9,25 +9,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
  #include "parameters.h"
  #include "sha3.h"
  
-@@ -180,17 +181,6 @@
-    else if(par_level == 4) csprng_randombytes_x4(x1, x2, x3, x4, xlen, &(states->state4));
- }
- 
--/******************************************************************************/
--
--/* global csprng state employed to have deterministic randombytes for testing */
--extern CSPRNG_STATE_T platform_csprng_state;
--/* extracts xlen bytes from the global CSPRNG */
--static inline
--void randombytes(unsigned char * x,
--                 unsigned long long xlen) {
--   csprng_randombytes(x,xlen,&platform_csprng_state);
--}
--
- /************************* HASH functions ********************************/
- 
- /* Opaque algorithm agnostic hash call */
-@@ -277,6 +267,10 @@
+@@ -271,6 +272,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -38,7 +20,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (res[placed] < P) {
             placed++;
          }
-@@ -322,6 +316,10 @@
+@@ -316,6 +321,10 @@
          }
          /* draw from 0 ... P-2, then add 1*/
          res[placed] = (sub_buffer & mask)+1;
@@ -49,7 +31,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (res[placed] < P) {
             placed++;
          }
-@@ -364,6 +362,11 @@
+@@ -358,6 +367,11 @@
              pos_remaining -= refresh_amount;
          }
          *((FP_ELEM*)res+placed) = sub_buffer & mask;
@@ -61,7 +43,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (*((FP_ELEM*)res+placed) < P) {
             placed++;
          }
-@@ -407,6 +410,10 @@
+@@ -401,6 +415,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -72,7 +54,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (res[placed] < Z) {
             placed++;
          }
-@@ -449,6 +456,10 @@
+@@ -443,6 +461,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -83,7 +65,7 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (res[placed] < Z) {
             placed++;
          }
-@@ -492,6 +503,11 @@
+@@ -486,6 +508,11 @@
              pos_remaining -= refresh_amount;
          }
          *((FZ_ELEM*)res+placed) = sub_buffer & mask;
@@ -96,8 +78,8 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
             placed++;
          }
 diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementation/lib/CROSS.c
---- unzip/Optimized_Implementation/lib/CROSS.c	2025-03-15 11:38:28.743967889 +0100
-+++ tmp/Optimized_Implementation/lib/CROSS.c	2025-03-15 11:38:05.719569546 +0100
+--- unzip/Optimized_Implementation/lib/CROSS.c	2025-08-22 00:51:23.178058075 +0200
++++ tmp/Optimized_Implementation/lib/CROSS.c	2025-08-22 00:31:16.036579456 +0200
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -106,9 +88,127 @@ diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementati
  #include "seedtree.h"
  
  #if defined(RSDP)
+diff -ruaN unzip/Reference_Implementation/include/api.h tmp/Reference_Implementation/include/api.h
+--- unzip/Reference_Implementation/include/api.h	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/include/api.h	2025-08-22 00:41:07.441952861 +0200
+@@ -32,7 +32,7 @@
+ 
+ #pragma once
+ 
+-#include "CROSS.h"
++#include "CROSS_struct.h"
+ #include "parameters.h"
+ 
+ #define CRYPTO_ALGNAME "CROSS"
+diff -ruaN unzip/Reference_Implementation/include/CROSS.h tmp/Reference_Implementation/include/CROSS.h
+--- unzip/Reference_Implementation/include/CROSS.h	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/include/CROSS.h	2025-08-22 00:41:48.618320272 +0200
+@@ -33,49 +33,10 @@
+ 
+ #include <stdint.h>
+ 
++#include "CROSS_struct.h"
+ #include "pack_unpack.h"
+ #include "parameters.h"
+ 
+-/* Public key: the parity check matrix is shrunk to a seed, syndrome
+- * represented in full */
+-typedef struct {
+-   uint8_t seed_pk[KEYPAIR_SEED_LENGTH_BYTES];
+-   uint8_t s[DENSELY_PACKED_FP_SYN_SIZE];
+-} pk_t;
+-
+-/* Private key: just a single seed*/
+-typedef struct {
+-   uint8_t seed_sk[KEYPAIR_SEED_LENGTH_BYTES];
+-} sk_t;
+-
+-typedef struct {
+-  uint8_t y[DENSELY_PACKED_FP_VEC_SIZE];
+-#if defined(RSDP)
+-  uint8_t v_bar[DENSELY_PACKED_FZ_VEC_SIZE];
+-#elif defined(RSDPG)
+-  uint8_t v_G_bar[DENSELY_PACKED_FZ_RSDP_G_VEC_SIZE];
+-#endif
+-} resp_0_t;
+-
+-/* Signature: */
+-typedef struct {
+-   uint8_t salt[SALT_LENGTH_BYTES];
+-   uint8_t digest_cmt[HASH_DIGEST_LENGTH];
+-   uint8_t digest_chall_2[HASH_DIGEST_LENGTH];
+-#if defined(NO_TREES)   
+-   uint8_t path[W*SEED_LENGTH_BYTES];
+-   uint8_t proof[W*HASH_DIGEST_LENGTH];
+-#else
+-   /*Seed tree paths storage*/
+-   uint8_t path[TREE_NODES_TO_STORE*SEED_LENGTH_BYTES];
+-   /*Merkle tree proof field.*/
+-   uint8_t proof[HASH_DIGEST_LENGTH*TREE_NODES_TO_STORE];
+-#endif
+-   uint8_t resp_1[T-W][HASH_DIGEST_LENGTH];
+-   resp_0_t resp_0[T-W];
+-} CROSS_sig_t;
+-
+-
+ /* keygen cannot fail */
+ void CROSS_keygen(sk_t *SK,
+                  pk_t *PK);
+diff -ruaN unzip/Reference_Implementation/include/CROSS_struct.h tmp/Reference_Implementation/include/CROSS_struct.h
+--- unzip/Reference_Implementation/include/CROSS_struct.h	1970-01-01 01:00:00.000000000 +0100
++++ tmp/Reference_Implementation/include/CROSS_struct.h	2025-08-22 00:51:40.694344747 +0200
+@@ -0,0 +1,47 @@
++#pragma once
++
++#include <stdint.h>
++
++#include "parameters.h"
++
++/* SUPERCOP edit: place struct definitions in a separate file so they can be 
++ * used in api.h without breaking namespacing */
++
++/* Public key: the parity check matrix is shrunk to a seed, syndrome
++ * represented in full */
++typedef struct {
++   uint8_t seed_pk[KEYPAIR_SEED_LENGTH_BYTES];
++   uint8_t s[DENSELY_PACKED_FP_SYN_SIZE];
++} pk_t;
++
++/* Private key: just a single seed*/
++typedef struct {
++   uint8_t seed_sk[KEYPAIR_SEED_LENGTH_BYTES];
++} sk_t;
++
++typedef struct {
++  uint8_t y[DENSELY_PACKED_FP_VEC_SIZE];
++#if defined(RSDP)
++  uint8_t v_bar[DENSELY_PACKED_FZ_VEC_SIZE];
++#elif defined(RSDPG)
++  uint8_t v_G_bar[DENSELY_PACKED_FZ_RSDP_G_VEC_SIZE];
++#endif
++} resp_0_t;
++
++/* Signature: */
++typedef struct {
++   uint8_t salt[SALT_LENGTH_BYTES];
++   uint8_t digest_cmt[HASH_DIGEST_LENGTH];
++   uint8_t digest_chall_2[HASH_DIGEST_LENGTH];
++#if defined(NO_TREES)   
++   uint8_t path[W*SEED_LENGTH_BYTES];
++   uint8_t proof[W*HASH_DIGEST_LENGTH];
++#else
++   /*Seed tree paths storage*/
++   uint8_t path[TREE_NODES_TO_STORE*SEED_LENGTH_BYTES];
++   /*Merkle tree proof field.*/
++   uint8_t proof[HASH_DIGEST_LENGTH*TREE_NODES_TO_STORE];
++#endif
++   uint8_t resp_1[T-W][HASH_DIGEST_LENGTH];
++   resp_0_t resp_0[T-W];
++} CROSS_sig_t;
+\ No newline at end of file
 diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Implementation/include/csprng_hash.h
---- unzip/Reference_Implementation/include/csprng_hash.h	2025-03-15 11:38:28.743967889 +0100
-+++ tmp/Reference_Implementation/include/csprng_hash.h	2025-03-15 11:38:05.719569546 +0100
+--- unzip/Reference_Implementation/include/csprng_hash.h	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/include/csprng_hash.h	2025-08-22 00:33:47.680655016 +0200
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
  #define CSPRNG_HASH_H
@@ -117,25 +217,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
  #include "parameters.h"
  #include "sha3.h"
  
-@@ -64,17 +65,6 @@
-    xof_shake_extract(csprng_state,x,xlen);
- }
- 
--/******************************************************************************/
--
--/* global csprng state employed to have deterministic randombytes for testing */
--extern CSPRNG_STATE_T platform_csprng_state;
--/* extracts xlen bytes from the global CSPRNG */
--static inline
--void randombytes(unsigned char * x,
--                 unsigned long long xlen) {
--   csprng_randombytes(x,xlen,&platform_csprng_state);
--}
--
- /************************* HASH functions ********************************/
- 
- /* Opaque algorithm agnostic hash call */
-@@ -138,6 +128,10 @@
+@@ -132,6 +133,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -146,7 +228,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
          if (res[placed] < P) {
             placed++;
          }
-@@ -183,6 +177,10 @@
+@@ -177,6 +182,10 @@
          }
          /* draw from 0 ... P-2, then add 1*/
          res[placed] = (sub_buffer & mask)+1;
@@ -157,7 +239,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
          if (res[placed] < P) {
             placed++;
          }
-@@ -225,6 +223,11 @@
+@@ -219,6 +228,11 @@
              pos_remaining -= refresh_amount;
          }
          *((FP_ELEM*)res+placed) = sub_buffer & mask;
@@ -169,7 +251,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
          if (*((FP_ELEM*)res+placed) < P) {
             placed++;
          }
-@@ -268,6 +271,10 @@
+@@ -262,6 +276,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -180,7 +262,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
          if (res[placed] < Z) {
             placed++;
          }
-@@ -310,6 +317,10 @@
+@@ -304,6 +322,10 @@
              pos_remaining -= refresh_amount;
          }
          res[placed] = sub_buffer & mask;
@@ -191,7 +273,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
          if (res[placed] < Z) {
             placed++;
          }
-@@ -353,6 +364,11 @@
+@@ -347,6 +369,11 @@
              pos_remaining -= refresh_amount;
          }
          *((FZ_ELEM*)res+placed) = sub_buffer & mask;
@@ -204,8 +286,8 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
             placed++;
          }
 diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementation/lib/CROSS.c
---- unzip/Reference_Implementation/lib/CROSS.c	2025-03-15 11:38:28.747967956 +0100
-+++ tmp/Reference_Implementation/lib/CROSS.c	2025-03-15 11:38:05.719569546 +0100
+--- unzip/Reference_Implementation/lib/CROSS.c	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/lib/CROSS.c	2025-08-22 00:34:09.289199532 +0200
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
  #include "merkle_tree.h"
@@ -215,18 +297,9 @@ diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implementation/lib/csprng_hash.c
---- unzip/Reference_Implementation/lib/csprng_hash.c	2025-03-15 11:38:28.747967956 +0100
-+++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-03-15 11:38:05.719569546 +0100
-@@ -33,8 +33,6 @@
- 
- #include "csprng_hash.h"
- 
--CSPRNG_STATE_T platform_csprng_state;
--
- #define  POSITION_MASK (( (uint16_t)1 << BITS_TO_REPRESENT(T-1))-1)
- 
- /* Fisher-Yates shuffle obtaining the entire required randomness in a single 
-@@ -81,6 +79,10 @@
+--- unzip/Reference_Implementation/lib/csprng_hash.c	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-08-22 00:35:10.610708869 +0200
+@@ -79,6 +79,10 @@
          int bits_for_pos = BITS_TO_REPRESENT(T-1-curr);
          uint64_t pos_mask = ( (uint64_t) 1 <<  bits_for_pos) - 1;
          uint16_t candidate_pos = (sub_buffer & pos_mask);
@@ -238,80 +311,96 @@ diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implem
              int dest = curr+candidate_pos;
              /* the position is admissible, swap */
 diff -ruaN unzip/Reference_Implementation/lib/pack_unpack.c tmp/Reference_Implementation/lib/pack_unpack.c
---- unzip/Reference_Implementation/lib/pack_unpack.c	2025-03-15 11:38:28.747967956 +0100
-+++ tmp/Reference_Implementation/lib/pack_unpack.c	2025-03-15 11:38:59.120464572 +0100
-@@ -36,6 +36,8 @@
+--- unzip/Reference_Implementation/lib/pack_unpack.c	2025-08-22 00:51:23.182058140 +0200
++++ tmp/Reference_Implementation/lib/pack_unpack.c	2025-08-22 00:37:58.358639143 +0200
+@@ -36,6 +36,9 @@
  
  /*Implementation of packing and unpacking of 3/7/9 bit elements into byte vectors*/
  
 +/* SUPERCOP edit: generic_pack_3_bit is unused in RSDPG */
 +#if Z == 7
++
  /*
   * generic_pack_3_bit()
   *
-@@ -99,6 +101,7 @@
-     out[i*3+2]  = (in[i*8+5] >> 1) | (in[i*8+6] << 2);
+@@ -100,6 +103,8 @@
    }
  }
-+#endif
  
++#endif
++
  /*
   * generic_pack_7_bit()
-@@ -182,6 +185,8 @@
+  *
+@@ -182,6 +187,9 @@
    }
  }
  
 +/* SUPERCOP edit: generic_pack_9_bit is unused in RSDP */
 +#if P == 509
++
  /*
   * generic_pack_9_bit()
   *
-@@ -272,6 +277,7 @@
-     out[i*9+7] |= (in[i*8+6] >> 2);
+@@ -273,6 +281,8 @@
    }
  }
-+#endif
  
++#endif
++
  /*
   * generic_pack_fp()
-@@ -324,6 +330,8 @@
+  *
+@@ -324,6 +334,9 @@
  #endif
  }
  
 +/* SUPERCOP edit: generic_unpack_3_bit is unused in RSDPG */
 +#if Z == 7
++
  /*
   * generic_unpack_3_bit()
   *
-@@ -413,6 +421,7 @@
- 
+@@ -414,6 +427,8 @@
    return is_packed_padd_ok;
  }
-+#endif
  
++#endif
++
  /*
   * generic_unpack_7_bit()
-@@ -504,6 +513,8 @@
+  *
+@@ -504,6 +519,9 @@
    return is_packed_padd_ok;
  }
  
 +/* SUPERCOP edit: generic_unpack_9_bit is unused in RSDP */
 +#if P == 509
++
  /*
   * generic_unpack_9_bit()
   *
-@@ -593,6 +604,7 @@
- 
+@@ -594,6 +612,8 @@
    return is_packed_padd_ok;
  }
-+#endif
  
++#endif
++
  /*
   * generic_unpack_fp()
+  *
 diff -ruaN unzip/Reference_Implementation/lib/sign.c tmp/Reference_Implementation/lib/sign.c
---- unzip/Reference_Implementation/lib/sign.c	2025-03-15 11:38:28.747967956 +0100
-+++ tmp/Reference_Implementation/lib/sign.c	2025-03-15 11:38:05.719569546 +0100
-@@ -77,14 +77,18 @@
+--- unzip/Reference_Implementation/lib/sign.c	2025-08-22 00:51:23.186058206 +0200
++++ tmp/Reference_Implementation/lib/sign.c	2025-08-22 00:48:45.627579006 +0200
+@@ -33,6 +33,7 @@
+ #include <string.h>  // memcpy
+ 
+ #include "api.h"
++#include "CROSS.h"
+ 
+ /*----------------------------------------------------------------------------*/
+ 
+@@ -77,14 +78,18 @@
                       unsigned long long *mlen,                  // out parameter
                       const unsigned char *sm,                   // in parameter
                       unsigned long long smlen,                  // in parameter
