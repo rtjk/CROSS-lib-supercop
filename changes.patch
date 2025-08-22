@@ -1,5 +1,5 @@
 diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Implementation/include/csprng_hash.h
---- unzip/Optimized_Implementation/include/csprng_hash.h	2025-08-22 00:51:23.174058010 +0200
+--- unzip/Optimized_Implementation/include/csprng_hash.h	2025-08-22 02:46:26.446223685 +0200
 +++ tmp/Optimized_Implementation/include/csprng_hash.h	2025-08-22 00:30:43.455627803 +0200
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
@@ -77,8 +77,29 @@ diff -ruaN unzip/Optimized_Implementation/include/csprng_hash.h tmp/Optimized_Im
          if (*((FZ_ELEM*)res+placed) < Z) {
             placed++;
          }
+diff -ruaN unzip/Optimized_Implementation/include/fp_arith.h tmp/Optimized_Implementation/include/fp_arith.h
+--- unzip/Optimized_Implementation/include/fp_arith.h	2025-08-22 02:46:26.446223685 +0200
++++ tmp/Optimized_Implementation/include/fp_arith.h	2025-08-22 02:47:18.674575661 +0200
+@@ -472,7 +472,7 @@
+     /* res: expand, align */
+     alignas(32) FP_ELEM res_x[ROUND_UP(N,EPI16_PER_REG)];
+     /* e: convert from uint8 to uint16, expand, align */
+-    alignas(32) FP_ELEM e_x[ROUND_UP(N,EPI16_PER_REG)];
++    alignas(32) FP_ELEM e_x[ROUND_UP(N,EPI16_PER_REG)] = {0};
+     for (int i = 0; i < N; i++) {
+         e_x[i] = e[i];
+     }
+@@ -528,7 +528,7 @@
+     /* res: expand, align */
+     alignas(32) FP_ELEM res_x[ROUND_UP(N,EPI16_PER_REG)];
+     /* in: convert from uint8 to uint16, expand, align */
+-    alignas(32) FP_ELEM in_x[ROUND_UP(N,EPI16_PER_REG)];
++    alignas(32) FP_ELEM in_x[ROUND_UP(N,EPI16_PER_REG)] = {0};
+     for (int i = 0; i < N; i++) {
+         in_x[i] = in[i];
+     }
 diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementation/lib/CROSS.c
---- unzip/Optimized_Implementation/lib/CROSS.c	2025-08-22 00:51:23.178058075 +0200
+--- unzip/Optimized_Implementation/lib/CROSS.c	2025-08-22 02:46:26.450223711 +0200
 +++ tmp/Optimized_Implementation/lib/CROSS.c	2025-08-22 00:31:16.036579456 +0200
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
@@ -89,7 +110,7 @@ diff -ruaN unzip/Optimized_Implementation/lib/CROSS.c tmp/Optimized_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/include/api.h tmp/Reference_Implementation/include/api.h
---- unzip/Reference_Implementation/include/api.h	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/include/api.h	2025-08-22 02:46:26.450223711 +0200
 +++ tmp/Reference_Implementation/include/api.h	2025-08-22 00:41:07.441952861 +0200
 @@ -32,7 +32,7 @@
  
@@ -101,7 +122,7 @@ diff -ruaN unzip/Reference_Implementation/include/api.h tmp/Reference_Implementa
  
  #define CRYPTO_ALGNAME "CROSS"
 diff -ruaN unzip/Reference_Implementation/include/CROSS.h tmp/Reference_Implementation/include/CROSS.h
---- unzip/Reference_Implementation/include/CROSS.h	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/include/CROSS.h	2025-08-22 02:46:26.450223711 +0200
 +++ tmp/Reference_Implementation/include/CROSS.h	2025-08-22 00:41:48.618320272 +0200
 @@ -33,49 +33,10 @@
  
@@ -207,7 +228,7 @@ diff -ruaN unzip/Reference_Implementation/include/CROSS_struct.h tmp/Reference_I
 +} CROSS_sig_t;
 \ No newline at end of file
 diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Implementation/include/csprng_hash.h
---- unzip/Reference_Implementation/include/csprng_hash.h	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/include/csprng_hash.h	2025-08-22 02:46:26.450223711 +0200
 +++ tmp/Reference_Implementation/include/csprng_hash.h	2025-08-22 00:33:47.680655016 +0200
 @@ -34,6 +34,7 @@
  #ifndef CSPRNG_HASH_H
@@ -286,7 +307,7 @@ diff -ruaN unzip/Reference_Implementation/include/csprng_hash.h tmp/Reference_Im
             placed++;
          }
 diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementation/lib/CROSS.c
---- unzip/Reference_Implementation/lib/CROSS.c	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/lib/CROSS.c	2025-08-22 02:46:26.454223739 +0200
 +++ tmp/Reference_Implementation/lib/CROSS.c	2025-08-22 00:34:09.289199532 +0200
 @@ -38,6 +38,7 @@
  #include "fp_arith.h"
@@ -297,7 +318,7 @@ diff -ruaN unzip/Reference_Implementation/lib/CROSS.c tmp/Reference_Implementati
  
  #if defined(RSDP)
 diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implementation/lib/csprng_hash.c
---- unzip/Reference_Implementation/lib/csprng_hash.c	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/lib/csprng_hash.c	2025-08-22 02:46:26.454223739 +0200
 +++ tmp/Reference_Implementation/lib/csprng_hash.c	2025-08-22 00:35:10.610708869 +0200
 @@ -79,6 +79,10 @@
          int bits_for_pos = BITS_TO_REPRESENT(T-1-curr);
@@ -311,7 +332,7 @@ diff -ruaN unzip/Reference_Implementation/lib/csprng_hash.c tmp/Reference_Implem
              int dest = curr+candidate_pos;
              /* the position is admissible, swap */
 diff -ruaN unzip/Reference_Implementation/lib/pack_unpack.c tmp/Reference_Implementation/lib/pack_unpack.c
---- unzip/Reference_Implementation/lib/pack_unpack.c	2025-08-22 00:51:23.182058140 +0200
+--- unzip/Reference_Implementation/lib/pack_unpack.c	2025-08-22 02:46:26.454223739 +0200
 +++ tmp/Reference_Implementation/lib/pack_unpack.c	2025-08-22 00:37:58.358639143 +0200
 @@ -36,6 +36,9 @@
  
@@ -390,7 +411,7 @@ diff -ruaN unzip/Reference_Implementation/lib/pack_unpack.c tmp/Reference_Implem
   * generic_unpack_fp()
   *
 diff -ruaN unzip/Reference_Implementation/lib/sign.c tmp/Reference_Implementation/lib/sign.c
---- unzip/Reference_Implementation/lib/sign.c	2025-08-22 00:51:23.186058206 +0200
+--- unzip/Reference_Implementation/lib/sign.c	2025-08-22 02:46:26.454223739 +0200
 +++ tmp/Reference_Implementation/lib/sign.c	2025-08-22 00:48:45.627579006 +0200
 @@ -33,6 +33,7 @@
  #include <string.h>  // memcpy
